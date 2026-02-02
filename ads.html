@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EasyBox Ads Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-app: #0d1117;
+        --bg-panel: #161b22;
+        --bg-card: #21262d;
+        --bg-input: #0d1117;
+        --border: #30363d;
+        --text-main: #c9d1d9;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-hover: #79c0ff;
+        --danger: #f85149;
+        --success: #3fb950;
+        --warning: #d29922;
+        --radius: 8px;
+        --font-ui: "Inter", system-ui, sans-serif;
+        --font-code: "JetBrains Mono", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        outline: none;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        font-family: var(--font-ui);
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* --- Layout --- */
+      .sidebar {
+        width: 300px;
+        background: var(--bg-panel);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        z-index: 20;
+        flex-shrink: 0;
+      }
+
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+        min-width: 0;
+      }
+
+      /* --- Sidebar Components --- */
+      .brand {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .brand h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.5px;
+      }
+      .brand span {
+        font-size: 11px;
+        color: var(--accent);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .json-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+        min-height: 0;
+      }
+      .panel-header {
+        padding: 10px 15px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .code-editor {
+        flex: 1;
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: var(--font-code);
+        font-size: 11px;
+        padding: 15px;
+        border: none;
+        resize: none;
+        line-height: 1.4;
+        overflow: auto;
+        white-space: pre;
+      }
+
+      .sidebar-actions {
+        padding: 15px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--bg-panel);
+        flex-shrink: 0;
+      }
+
+      /* --- Main Area Components --- */
+      .toolbar {
+        padding: 12px 24px;
+        background: rgba(22, 27, 34, 0.95);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        z-index: 10;
+      }
+
+      .toolbar-left {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .toolbar-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .scroll-area {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+        scroll-behavior: smooth;
+        min-height: 0;
+        position: relative;
+      }
+
+      /* --- Cards --- */
+      .ads-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 16px;
+        padding-bottom: 80px;
+        width: 100%;
+      }
+
+      .ad-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        display: flex;
+        flex-direction: column;
+        transition:
+          box-shadow 0.2s,
+          border-color 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+      .ad-card:hover {
+        border-color: var(--text-muted);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        z-index: 1;
+      }
+      .ad-card.inactive {
+        opacity: 0.65;
+        border-style: dashed;
+      }
+
+      .card-header {
+        padding: 10px 14px;
+        background: rgba(255, 255, 255, 0.02);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .card-body {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .card-footer {
+        padding: 10px 14px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.15);
+        margin-top: auto;
+      }
+
+      /* --- Forms & Inputs --- */
+      .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .form-group {
+        position: relative;
+      }
+
+      label {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      textarea {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px 10px;
+        color: var(--text-main);
+        font-family: var(--font-ui);
+        font-size: 13px;
+        transition: all 0.2s;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 70px;
+        line-height: 1.4;
+      }
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.15);
+      }
+
+      /* --- Quick Chips --- */
+      .quick-chips {
+        display: flex;
+        gap: 4px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        font-size: 9px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        padding: 3px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        color: var(--text-muted);
+        transition: all 0.1s;
+      }
+      .chip:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border-color: var(--text-muted);
+      }
+      .chip.active {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+
+      /* --- Row Layout for Active/Priority --- */
+      .control-row {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr; /* Priority กว้างขึ้น */
+        gap: 12px;
+        align-items: end;
+      }
+
+      /* --- Active Toggle Compact --- */
+      .status-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0, 0, 0, 0.25);
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        height: 35px;
+      }
+      .status-label {
+        font-weight: 600;
+        font-size: 11px;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 32px;
+        height: 18px;
+      }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #30363d;
+        transition: 0.3s;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 12px;
+        width: 12px;
+        left: 2px;
+        bottom: 2px;
+        background-color: #8b949e;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: rgba(63, 185, 80, 0.2);
+        border-color: var(--success);
+      }
+      input:checked + .slider:before {
+        transform: translateX(14px);
+        background-color: var(--success);
+      }
+
+      /* --- Buttons --- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-main);
+        text-decoration: none;
+      }
+      .btn:hover {
+        background: #30363d;
+        border-color: #8b949e;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        background: #238636;
+        border-color: rgba(240, 246, 252, 0.1);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #2ea043;
+      }
+      .btn-danger {
+        color: var(--danger);
+        border-color: transparent;
+        background: transparent;
+      }
+      .btn-danger:hover {
+        background: rgba(248, 81, 73, 0.1);
+        border-color: var(--danger);
+      }
+      .btn-block {
+        width: 100%;
+      }
+      .btn-icon {
+        padding: 6px;
+        aspect-ratio: 1;
+      }
+
+      /* --- Status Badge --- */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 100px;
+        font-size: 10px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .badge-live {
+        background: rgba(63, 185, 80, 0.15);
+        color: #3fb950;
+        border-color: rgba(63, 185, 80, 0.2);
+      }
+      .badge-scheduled {
+        background: rgba(210, 153, 34, 0.15);
+        color: #d29922;
+        border-color: rgba(210, 153, 34, 0.2);
+      }
+      .badge-expired {
+        background: rgba(248, 81, 73, 0.15);
+        color: #ff7b72;
+        border-color: rgba(248, 81, 73, 0.2);
+      }
+      .badge-inactive {
+        background: rgba(139, 148, 158, 0.15);
+        color: #8b949e;
+        border-color: rgba(139, 148, 158, 0.2);
+      }
+      .status-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      /* --- Responsive --- */
+      @media (max-width: 900px) {
+        body {
+          flex-direction: column;
+          height: auto;
+          overflow: auto;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .main-content {
+          height: auto;
+        }
+        .scroll-area {
+          overflow: visible;
+          padding: 15px;
+        }
+        .ads-grid {
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        .code-editor {
+          min-height: 200px;
+        }
+      }
+
+      /* --- Toast --- */
+      .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .toast {
+        background: #1f6feb;
+        color: white;
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <input type="file" id="fileInput" accept=".json" style="display: none" />
+
+    <div class="sidebar">
+      <div class="brand">
+        <h1>Ads Console</h1>
+        <span>EasyBox Manager</span>
+      </div>
+
+      <div class="json-panel">
+        <div class="panel-header">
+          <span>Live Output</span>
+          <button class="btn btn-icon" id="btnCopyJSON" title="Copy JSON">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path
+                d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+              ></path>
+            </svg>
+          </button>
+        </div>
+        <textarea id="jsonOutput" class="code-editor" readonly></textarea>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn btn-block" id="btnUpload">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload .json
+        </button>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+          <button class="btn btn-primary" id="btnExport">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export
+          </button>
+          <button class="btn" id="btnReload">Reset</button>
+        </div>
+
+        <button class="btn btn-block" id="btnPreviewRandom">
+          Simulate Random
+        </button>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-primary" id="btnAdd">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Ad
+          </button>
+          <select
+            id="filterSelect"
+            class="btn"
+            style="appearance: none; padding-right: 24px"
+          >
+            <option value="all">Show All</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
+          </select>
+        </div>
+        <div class="toolbar-right">
+          <span class="badge badge-inactive" id="countBadge">Loading...</span>
+        </div>
+      </div>
+
+      <div class="scroll-area">
+        <div id="adsGrid" class="ads-grid"></div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+      // ==========================================
+      // CONFIG & STATE
+      // ==========================================
+      const ADS_JSON_URL = "ads.json";
+      const LOCAL_STORAGE_KEY = "easybox_ads_v5";
+
+      let appState = {
+        ads: [],
+        filter: "all",
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      function toast(msg, type = "info") {
+        const el = document.createElement("div");
+        el.className = `toast`;
+        el.style.backgroundColor =
+          type === "error"
+            ? "#d73a49"
+            : type === "success"
+              ? "#238636"
+              : "#1f6feb";
+        el.innerHTML = `<span>${msg}</span>`;
+        $("toastContainer").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          setTimeout(() => el.remove(), 300);
+        }, 3000);
+      }
+
+      function getTodayISO() {
+        return new Date().toISOString().split("T")[0];
+      }
+
+      function getFutureISO(type, amount) {
+        const d = new Date();
+        if (type === "day") d.setDate(d.getDate() + amount);
+        if (type === "year") d.setFullYear(d.getFullYear() + amount);
+        return d.toISOString().split("T")[0];
+      }
+
+      function getStatus(ad) {
+        if (!ad.active) return { type: "inactive", label: "Inactive" };
+        const now = new Date();
+        const from = new Date(ad.from);
+        from.setHours(0, 0, 0, 0);
+        const to = new Date(ad.to);
+        to.setHours(23, 59, 59, 999);
+        if (now < from)
+          return { type: "scheduled", label: `Starts ${ad.from}` };
+        if (now > to) return { type: "expired", label: `Expired` };
+        return { type: "live", label: "Live" };
+      }
+
+      window.setDate = (idx, type, value) => {
+        let val = "";
+        if (value === "today") val = getTodayISO();
+        else if (value === "tomorrow") val = getFutureISO("day", 1);
+        else if (value === "30days") val = getFutureISO("day", 30);
+        else if (value === "90days") val = getFutureISO("day", 90);
+        else if (value === "1year") val = getFutureISO("year", 1);
+        else if (value === "100year") val = getFutureISO("year", 100);
+
+        updateAd(idx, type, val);
+      };
+
+      window.setPriority = (idx, val) => updateAd(idx, "priority", val);
+
+      async function init() {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            appState.ads = Array.isArray(parsed) ? parsed : parsed.ads || [];
+            render();
+            return;
+          } catch (e) {}
+        }
+        await loadFromServer();
+      }
+
+      async function loadFromServer() {
+        try {
+          const res = await fetch(ADS_JSON_URL + "?t=" + Date.now());
+          if (!res.ok) throw new Error("File not found");
+          const data = await res.json();
+          loadData(data);
+          toast("Loaded from server");
+        } catch (err) {
+          toast("Using empty template", "error");
+          appState.ads = [];
+          render();
+        }
+      }
+
+      function loadData(data) {
+        let ads = Array.isArray(data) ? data : data.ads || [];
+        appState.ads = ads.map(normalizeAd);
+        render();
+      }
+
+      function normalizeAd(ad) {
+        return {
+          text: ad.text || "",
+          url: ad.url || "",
+          priority: typeof ad.priority === "number" ? ad.priority : 1,
+          from: ad.from || getTodayISO(),
+          to: ad.to || "2030-12-31",
+          active: ad.active !== false,
+        };
+      }
+
+      function saveState() {
+        const jsonStr = JSON.stringify({ ads: appState.ads }, null, 2);
+        $("jsonOutput").value = jsonStr;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState.ads));
+        $("countBadge").textContent = `${appState.ads.length} Ads Total`;
+      }
+
+      window.updateAd = (idx, key, value) => {
+        appState.ads[idx][key] = value;
+        saveState();
+        if (["active", "from", "to"].includes(key)) {
+          render();
+        } else {
+          // Sync fields for text input (oninput) to avoid losing focus
+          // We do NOT re-render here for text fields to keep cursor position
+        }
+      };
+
+      function render() {
+        const container = $("adsGrid");
+        container.innerHTML = "";
+
+        const filteredAds = appState.ads
+          .map((ad, idx) => ({ ...ad, _idx: idx }))
+          .filter((ad) => {
+            if (appState.filter === "active") return ad.active;
+            if (appState.filter === "inactive") return !ad.active;
+            return true;
+          });
+
+        if (filteredAds.length === 0) {
+          container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">No ads found. Click "Add New Ad".</div>`;
+        }
+
+        filteredAds.forEach((ad) => {
+          const status = getStatus(ad);
+          const card = document.createElement("div");
+          card.className = `ad-card ${!ad.active ? "inactive" : ""}`;
+
+          card.innerHTML = `
+        <div class="card-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-family: var(--font-code); font-size:11px; color: var(--text-muted);">#${ad._idx + 1}</span>
+            <span class="badge badge-${status.type}">
+              <span class="status-dot"></span> ${status.label}
+            </span>
+          </div>
+          <div>
+            <button class="btn btn-danger btn-icon" onclick="removeAd(${ad._idx})" title="Delete">&times;</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          
+          <div class="control-row">
+            <div>
+              <label>Status</label>
+              <div class="status-toggle">
+                <div class="status-label" style="color: ${ad.active ? "var(--success)" : "var(--text-muted)"}">
+                  ${ad.active ? "Active" : "Paused"}
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" ${ad.active ? "checked" : ""} onchange="updateAd(${ad._idx}, 'active', this.checked)">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Priority</label>
+              <input type="number" value="${ad.priority}" style="width: 100%; font-weight:bold; height: 35px;" oninput="updateAd(${ad._idx}, 'priority', parseInt(this.value))">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label>Start (Day/Month/Year)</label>
+              <input type="date" value="${ad.from}" data-idx="${ad._idx}" data-key="from" onchange="updateAd(${ad._idx}, 'from', this.value)">
+              <div class="quick-chips">
+                <div class="chip" onclick="setDate(${ad._idx}, 'from', 'today')">Today</div>
+                <div class="chip" onclick="setDate(${ad._idx}, 'from', 'tomorrow')">Tomorrow</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>End (Day/Month/Year)</label>
+              <input type="date" value="${ad.to}" data-idx="${ad._idx}" data-key="to" onchange="updateAd(${ad._idx}, 'to', this.value)">
+              <div class="quick-chips">
+                <div class="chip" onclick="setDate(${ad._idx}, 'to', '30days')">+30</div>
+                <div class="chip" onclick="setDate(${ad._idx}, 'to', '90days')">+90</div>
+                <div class="chip" onclick="setDate(${ad._idx}, 'to', '1year')">+1Y</div>
+                <div class="chip" onclick="setDate(${ad._idx}, 'to', '100year')">+100Y</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-group">
+              <label>Message</label>
+              <textarea placeholder="Write your ad here..." oninput="updateAd(${ad._idx}, 'text', this.value)">${escapeHtml(ad.text)}</textarea>
+            </div>
+            <div class="form-group">
+              <label>Link URL</label>
+              <input type="text" placeholder="https://..." value="${escapeHtml(ad.url)}" oninput="updateAd(${ad._idx}, 'url', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <div style="font-size: 10px; color: var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 150px;">
+            ${ad.url ? `<a href="${ad.url}" target="_blank" style="color:var(--accent);">Test Link &rarr;</a>` : ""}
+          </div>
+          <button class="btn" onclick="duplicateAd(${ad._idx})" title="Duplicate">Duplicate</button>
+        </div>
+      `;
+          container.appendChild(card);
+        });
+
+        saveState();
+      }
+
+      window.removeAd = (idx) => {
+        if (confirm("Delete?")) {
+          appState.ads.splice(idx, 1);
+          render();
+          toast("Deleted");
+        }
+      };
+      window.duplicateAd = (idx) => {
+        appState.ads.splice(
+          idx + 1,
+          0,
+          JSON.parse(JSON.stringify(appState.ads[idx])),
+        );
+        render();
+        toast("Duplicated");
+      };
+
+      $("btnAdd").onclick = () => {
+        appState.ads.unshift(
+          normalizeAd({ text: "New Promotion", priority: 5 }),
+        );
+        render();
+        $("adsGrid").scrollIntoView({ behavior: "smooth" });
+        toast("New ad created");
+      };
+      $("filterSelect").onchange = (e) => {
+        appState.filter = e.target.value;
+        render();
+      };
+      $("btnReload").onclick = () => {
+        if (confirm("Discard changes?")) {
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+          loadFromServer();
+        }
+      };
+      $("btnCopyJSON").onclick = () => {
+        navigator.clipboard.writeText($("jsonOutput").value);
+        toast("JSON copied");
+      };
+      $("btnExport").onclick = () => {
+        const a = document.createElement("a");
+        a.href =
+          "data:text/json;charset=utf-8," +
+          encodeURIComponent($("jsonOutput").value);
+        a.download = "ads.json";
+        a.click();
+      };
+
+      $("btnUpload").onclick = () => $("fileInput").click();
+      $("fileInput").onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const json = JSON.parse(event.target.result);
+            loadData(json);
+            toast("File uploaded", "success");
+          } catch (err) {
+            toast("Invalid JSON", "error");
+          }
+          e.target.value = "";
+        };
+        reader.readAsText(file);
+      };
+
+      $("btnPreviewRandom").onclick = () => {
+        const now = new Date();
+        const valid = appState.ads.filter(
+          (a) => a.active && new Date(a.from) <= now && new Date(a.to) >= now,
+        );
+        if (!valid.length) return toast("No active ads", "error");
+        const maxP = Math.max(...valid.map((a) => a.priority));
+        const winner = valid.filter((a) => a.priority === maxP)[
+          Math.floor(
+            Math.random() * valid.filter((a) => a.priority === maxP).length,
+          )
+        ];
+        alert(`[Simulation Result]\nShowing: "${winner.text}"`);
+      };
+
+      function escapeHtml(text) {
+        return text
+          ? text
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+          : "";
+      }
+
+      init();
+    </script>
+  </body>
+</html>
